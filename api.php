@@ -52,7 +52,7 @@ class TwitterAPI {
 	}
 
 	public function home() {
-		$path = '/1.1/statuses/home_timeline.json'; // api call path
+		$this->_path = '/1.1/statuses/home_timeline.json'; // api call path
 
 		$query = array( // query parameters
 			'count' => $this->_config['count'],
@@ -64,7 +64,19 @@ class TwitterAPI {
 		return $this->_getData($query);
 	}
 
-	private function _getData($query) {
+	public function follow($screen_name, $id) {
+		$this->_path = "/1.1/friendships/create.json";
+		$this->_method = "POST";
+		$data = array("follow" => "true");
+		if ( isset($screen_name) )
+			$data['screen_name'] = $screen_name;
+		elseif ( isset($id) )
+			$data['id'] = $id;
+
+		return $this->_getData($query, $data);
+	}
+
+	private function _getData($query, $post_fields = FALSE) {
 		$oauth = array(
 		    'oauth_consumer_key' => $this->_config['consumer_key'],
 		    'oauth_token' => $this->_config['token'],
@@ -115,7 +127,6 @@ class TwitterAPI {
 
 		// if you're doing post, you need to skip the GET building above
 		// and instead supply query parameters to CURLOPT_POSTFIELDS
-		echo $auth."\n";
 		$options = array( CURLOPT_HTTPHEADER => array("Authorization: $auth"),
 		                  //CURLOPT_POSTFIELDS => $postfields,
 		                  CURLOPT_HEADER => false,
@@ -123,12 +134,8 @@ class TwitterAPI {
 		                  CURLOPT_RETURNTRANSFER => true,
 		                  CURLOPT_SSL_VERIFYPEER => false);
 
-		if ( $query ) {
-			$str = array();
-			foreach ( $query as $key => $value )
-				$str[] = $key ."=". $value;
-
-			$options[CURLOPT_POSTFIELDS] = implode("&", $str);
+		if ( $post_fields ) {
+			$options[CURLOPT_POSTFIELDS] = http_build_query($post_fields);
 		}
 
 		// do our business
@@ -148,6 +155,10 @@ class TwitterAPI {
 
 	public function setConfig ( $which, $value ) {
 		$this->_config[$which] = $value;
+	}
+
+	public function getConfig ( $which ) {
+		return $this->_config[$which];
 	}
 }
 
