@@ -23,7 +23,7 @@ https://dev.twitter.com/docs/rate-limiting/1.1
 
 PHP Setup
 -------------
-Rename config.php-dist to config.php. 
+Rename config-default.php to config.php. 
 
 Next, open config.php in the text editor of your choice, and place your newly created token/key/secrets where appropriate, and a few lines below that, your twitter username as a fallback incase it isn't passed in for whatever reason. Save the file and upload all the files to your webhost or whereever you are running tt-rss from.
 

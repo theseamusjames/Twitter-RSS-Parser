@@ -1,34 +1,58 @@
 <?php
-if (isset($q)){
-	$td = $twitter_data['statuses'];
-} else {
-	$td = $twitter_data;
-}
-$arrLen = count($td);
-for ($i=0; $i<$arrLen; $i++) {
-	print(PHP_EOL. '	<entry>'. PHP_EOL);
-		print('		<id>tag:twitter.com,' . date("Y-m-d", strtotime($td[$i]['created_at'])) . ':/' . $td[$i]['user']['screen_name'] . '/statuses/' . $td[$i]['id_str'] . '</id>'. PHP_EOL);
-		print('		<link href="https://twitter.com/'.$td[$i]['user']['screen_name'].'/statuses/'. $td[$i]['id_str'] .'" rel="alternate" type="text/html"/>'. PHP_EOL);
-		print('		<title>'.$td[$i]['user']['screen_name'].': '.htmlspecialchars($td[$i]['text']).'</title>'. PHP_EOL);
-		print('		<summary type="html"><![CDATA['.$td[$i]['user']['screen_name'].': '.$td[$i]['text'].']]></summary>'. PHP_EOL);
+
+class RssFeed {
+	private $_protocol;
+
+	function __construct() {
+		if (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'
+		    || $_SERVER['SERVER_PORT'] == 443) {
+
+		    $this->_protocol = 'https://';
+		} else {
+		    $this->_protocol = 'http://';
+		}
+	}
+
+	public function start($id, $title, $updated, $link) {
+		header('Content-type: application/atom+xml; charset=utf-8');
+		print('<?xml version="1.0" encoding="utf-8"?>'. PHP_EOL);
+		print('<feed xmlns="http://www.w3.org/2005/Atom" xml:lang="en" xml:base="'.$_SERVER['SERVER_NAME'].'">'. PHP_EOL);
+
+		print('<id>'.$id.'</id>'. PHP_EOL);
+		print('<title>'. urldecode($title) . '</title>'. PHP_EOL);
+		print('<updated>'.$updated.'</updated>'. PHP_EOL);
+
+		print('<link href="'.$link.'"/>'. PHP_EOL);
+		print('<link href="'.$this->_protocol.$_SERVER['SERVER_NAME'].str_replace("&", "&amp;", $_SERVER['REQUEST_URI']).'" rel="self" type="application/atom+xml" />'. PHP_EOL);
+	}
+
+	public function entry($id, $link, $title, $summary, $content, $updated, $author, $categories) {
+		print(PHP_EOL. '	<entry>'. PHP_EOL);
+		print('		<id>'. $id . '</id>'. PHP_EOL);
+		print('		<link href="'.$link.'" rel="alternate" type="text/html"/>'. PHP_EOL);
+		print('		<title>'.$title.'</title>'. PHP_EOL);
+		print('		<summary type="html"><![CDATA['.$summary.']]></summary>'. PHP_EOL);
 		
-		$feedContent = '		<content type="html"><![CDATA[<p>'.$td[$i]['text'].'</p>]]></content>';
+		$feedContent = '		<content type="html"><![CDATA[<p>'.$content.'</p>]]></content>';
 		$text = processString($feedContent);
 		
 		print($text . PHP_EOL);
-		print('		<updated>'.date('c', strtotime($td[$i]['created_at'])).'</updated>'. PHP_EOL);
-		print('		<author><name>'.$td[$i]['user']['screen_name'].'</name></author>'. PHP_EOL);
+		print('		<updated>'.$updated.'</updated>'. PHP_EOL);
+		print('		<author><name>'.$author.'</name></author>'. PHP_EOL);
 		
-		$hashLen = count($td[$i]['entities']['hashtags']);
-		if ($hashLen > 0){
-			for ($j=0; $j<$hashLen; $j++){
-				print('		<category term="'.$td[$i]['entities']['hashtags'][$j]['text'].'"/>'. PHP_EOL);
+		if (count($categories) > 0){
+			foreach ( $categories as $category){
+				print('		<category term="'.$category.'"/>'. PHP_EOL);
 			}
 		}
 		
-	print('	</entry>'. PHP_EOL);
+		print('	</entry>'. PHP_EOL);
+	}
+
+	public function end() {
+		print('</feed>'. PHP_EOL);
+		print('<!-- vim:ft=xml -->');
+	}
 }
 
-print('</feed>'. PHP_EOL);
-print('<!-- vim:ft=xml -->');
 ?>
